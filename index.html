@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Jogo de Matemática - Início</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e1e; /* cinza escuro */
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow-x: hidden;
+    }
+    .falling-symbols {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+    .symbol {
+      position: absolute;
+      font-size: 2.5rem;
+      color: rgba(255, 255, 255, 0.45);
+      text-shadow: 0 0 6px rgba(255,255,255,0.3);
+      animation: fall linear infinite;
+    }
+    @keyframes fall {
+      0% { transform: translateY(-150px) rotate(0deg); }
+      100% { transform: translateY(100vh) rotate(1080deg); }
+    }
+    header {
+      text-align: center;
+      padding: 30px 20px;
+      background: #2d2d2d;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+    .container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      width: 100%;
+      max-width: 500px;
+    }
+    .btn {
+      padding: 30px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      text-align: center;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      color: white;
+      text-decoration: none;
+      display: block;
+    }
+    .btn:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+    .btn-criar {
+      background: #2196F3;
+    }
+    .btn-entrar {
+      background: #4CAF50;
+    }
+    .btn-sair {
+      background: #e53935;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="falling-symbols" id="symbols"></div>
+
+<header>
+  <h1>Jogo de Matemática</h1>
+</header>
+
+<div class="container">
+  <div class="options">
+    <a href="professora.html" class="btn btn-criar">Criar Partida</a>
+    <a href="aluno.html" class="btn btn-entrar">Entrar em Partida</a>
+    <button class="btn btn-sair" onclick="sairDoSite()">Sair</button>
+  </div>
+</div>
+
+<footer>
+  Desenvolvido para atividades de matemática • Divirta-se aprendendo!
+</footer>
+
+<script>
+  // Símbolos matemáticos caindo
+  const simbolos = ["+", "−", "×", "÷", "=", "²", "³", "√", "π", "∞", "%", "≈", "≠"];
+  
+  setInterval(() => {
+    const s = document.createElement("div");
+    s.className = "symbol";
+    s.textContent = simbolos[Math.floor(Math.random() * simbolos.length)];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.animationDuration = (8 + Math.random() * 15) + "s";
+    document.getElementById("symbols").appendChild(s);
+    setTimeout(() => s.remove(), 35000);
+  }, 500);
+
+  // Função para sair do site (fechar a aba/janela)
+  function sairDoSite() {
+    if (confirm("Deseja realmente sair do jogo?")) {
+      window.close();
+    }
+  }
+</script>
+</body>
+</html>
