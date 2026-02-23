@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Área da Professora - Criar Aula</title>
+  <title>Área da Professora - Criar Partida</title>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <style>
@@ -29,7 +29,6 @@
       color: rgba(255, 255, 255, 0.45);
       text-shadow: 0 0 6px rgba(255,255,255,0.3);
       animation: fall linear infinite;
-      white-space: nowrap;
     }
     @keyframes fall {
       0% { transform: translateY(-150px) rotate(0deg); }
@@ -87,21 +86,16 @@
   </style>
 </head>
 <body>
-
 <div class="falling-symbols" id="symbols"></div>
-
 <header>
-  <h1>Área da Professora - Criar Aula</h1>
+  <h1>Área da Professora</h1>
 </header>
-
 <main>
-  <h2 style="text-align:center; margin:30px 0;">Nova aula criada automaticamente</h2>
-
+  <h2 style="text-align:center; margin:30px 0;">Partida criada automaticamente</h2>
   <div id="sala-info">
-    Senha da aula: <div class="info-senha" id="senha-sala">Gerando...</div>
-    <div class="subinfo">Compartilhe essa senha com os alunos para que entrem na aula</div>
+    Senha da partida: <div class="info-senha" id="senha-sala">Gerando...</div>
+    <div class="subinfo">Compartilhe essa senha com os alunos para que entrem na mesma partida</div>
   </div>
-
   <section>
     <h2>Adicionar Perguntas</h2>
     <input id="pergunta-manual" placeholder="Ex: 8 + 5 =" />
@@ -109,44 +103,38 @@
     <button onclick="addPerguntaManual()">Adicionar Manual</button>
     <button onclick="gerarPerguntaAleatoria()">Gerar Aleatória</button>
     <button onclick="limparPerguntas()" style="background:#e53935;">Limpar tudo</button>
-
     <div class="lista-perguntas" id="listaPerguntas" style="margin-top:25px;"></div>
   </section>
-
   <section>
     <h2>Alunos conectados</h2>
     <div class="lista-alunos" id="listaAlunos">Aguardando alunos...</div>
   </section>
-
   <div style="text-align:center; margin:60px 0;">
-    <button id="btnIniciar" onclick="iniciarRodada()" style="padding:20px 80px; font-size:1.8rem;">Iniciar Aula</button>
+    <button id="btnIniciar" onclick="iniciarRodada()" style="padding:20px 80px; font-size:1.8rem;">Iniciar Jogo</button>
     <button id="btnProxima" onclick="proximaPergunta()" style="padding:20px 80px; font-size:1.8rem;" disabled>Próxima pergunta</button>
-    <button id="btnFinalizar" onclick="finalizarRodada()" style="padding:20px 80px; font-size:1.8rem; background:#e53935;" disabled>Finalizar Aula</button>
+    <button id="btnFinalizar" onclick="finalizarRodada()" style="padding:20px 80px; font-size:1.8rem; background:#e53935;" disabled>Finalizar</button>
   </div>
-
   <div style="font-size:2.8rem; text-align:center; margin:50px 0; min-height:80px;" id="pergunta-atual">—</div>
-
   <h2>Respostas da turma (ao vivo)</h2>
   <table>
     <thead><tr><th>Aluno</th><th>Acertos</th><th>Última resposta</th></tr></thead>
     <tbody id="tabelaRespostas"></tbody>
   </table>
-
+  <!-- Botão Voltar -->
   <div style="text-align: center; margin-top: 60px;">
     <a href="index.html" class="btn-voltar">← Voltar para a tela inicial</a>
   </div>
 </main>
-
 <script>
-  // Cole aqui o firebaseConfig REAL do seu projeto Firebase (obtido no console)
+  // Cole aqui o firebaseConfig REAL do seu projeto Firebase
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_NUMERO",
-    appId: "1:SEU_NUMERO:web:SUA_CHAVE"
+    apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    authDomain: "jogo-matematica-27c29.firebaseapp.com",
+    databaseURL: "https://jogo-matematica-27c29-default-rtdb.firebaseio.com",
+    projectId: "jogo-matematica-27c29",
+    storageBucket: "jogo-matematica-27c29.appspot.com",
+    messagingSenderId: "XXXXXXXXXXXX",
+    appId: "1:XXXXXXXXXXXX:web:xxxxxxxxxxxxxxxxxxxxxxxx"
   };
 
   firebase.initializeApp(firebaseConfig);
@@ -154,27 +142,27 @@
 
   let salaAtual = null;
 
-  // Cria uma NOVA sala (e senha aleatória) toda vez que a página for carregada
-  window.addEventListener('load', () => {
-    criarNovaSala();
-  });
+  window.onload = function() {
+    console.log("Iniciando criação automática da sala...");
+    criarSalaAutomatica();
+  };
 
-  function criarNovaSala() {
+  function criarSalaAutomatica() {
     salaAtual = Math.random().toString(36).substring(2, 8).toUpperCase();
-
+    console.log("Senha gerada:", salaAtual);
     db.ref(`salas/${salaAtual}`).set({
       perguntas: {},
       atual: null,
       respostas: {},
       alunos: {}
     }).then(() => {
+      console.log("Sala criada com sucesso no Firebase!");
       document.getElementById("senha-sala").textContent = salaAtual;
-      monitorarSala();
     }).catch(error => {
       console.error("Erro ao criar sala:", error);
-      document.getElementById("senha-sala").textContent = "Erro ao criar sala";
-      alert("Não foi possível criar a aula. Verifique o console (F12) e o firebaseConfig.");
+      document.getElementById("senha-sala").textContent = "Erro ao gerar senha";
     });
+    monitorarSala();
   }
 
   function monitorarSala() {
@@ -194,7 +182,6 @@
         lista.appendChild(div);
       });
     });
-
     db.ref(`salas/${salaAtual}/alunos`).on("value", snap => {
       const div = document.getElementById("listaAlunos");
       div.innerHTML = "";
@@ -211,7 +198,6 @@
         });
       }
     });
-
     db.ref(`salas/${salaAtual}/atual`).on("value", snap => {
       const idx = snap.val();
       document.getElementById("pergunta-atual").textContent = idx === null ? "—" : `Pergunta ${idx + 1}`;
@@ -219,7 +205,6 @@
       document.getElementById("btnFinalizar").disabled = idx === null;
       document.getElementById("btnIniciar").disabled = idx !== null;
     });
-
     db.ref(`salas/${salaAtual}/respostas`).on("value", snap => {
       const tbody = document.getElementById("tabelaRespostas");
       tbody.innerHTML = "";
