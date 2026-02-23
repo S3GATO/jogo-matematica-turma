@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Área da Professora - Criar Partida</title>
+  <title>Área da Professora - Criar Aula</title>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <style>
@@ -29,6 +29,7 @@
       color: rgba(255, 255, 255, 0.45);
       text-shadow: 0 0 6px rgba(255,255,255,0.3);
       animation: fall linear infinite;
+      white-space: nowrap;
     }
     @keyframes fall {
       0% { transform: translateY(-150px) rotate(0deg); }
@@ -90,15 +91,15 @@
 <div class="falling-symbols" id="symbols"></div>
 
 <header>
-  <h1>Área da Professora</h1>
+  <h1>Área da Professora - Criar Aula</h1>
 </header>
 
 <main>
-  <h2 style="text-align:center; margin:30px 0;">Partida criada automaticamente</h2>
+  <h2 style="text-align:center; margin:30px 0;">Nova aula criada automaticamente</h2>
 
   <div id="sala-info">
-    Senha da partida: <div class="info-senha" id="senha-sala">Gerando...</div>
-    <div class="subinfo">Compartilhe essa senha com os alunos para que entrem na mesma partida</div>
+    Senha da aula: <div class="info-senha" id="senha-sala">Gerando...</div>
+    <div class="subinfo">Compartilhe essa senha com os alunos para que entrem na aula</div>
   </div>
 
   <section>
@@ -118,9 +119,9 @@
   </section>
 
   <div style="text-align:center; margin:60px 0;">
-    <button id="btnIniciar" onclick="iniciarRodada()" style="padding:20px 80px; font-size:1.8rem;">Iniciar Jogo</button>
+    <button id="btnIniciar" onclick="iniciarRodada()" style="padding:20px 80px; font-size:1.8rem;">Iniciar Aula</button>
     <button id="btnProxima" onclick="proximaPergunta()" style="padding:20px 80px; font-size:1.8rem;" disabled>Próxima pergunta</button>
-    <button id="btnFinalizar" onclick="finalizarRodada()" style="padding:20px 80px; font-size:1.8rem; background:#e53935;" disabled>Finalizar</button>
+    <button id="btnFinalizar" onclick="finalizarRodada()" style="padding:20px 80px; font-size:1.8rem; background:#e53935;" disabled>Finalizar Aula</button>
   </div>
 
   <div style="font-size:2.8rem; text-align:center; margin:50px 0; min-height:80px;" id="pergunta-atual">—</div>
@@ -131,25 +132,34 @@
     <tbody id="tabelaRespostas"></tbody>
   </table>
 
-  <!-- Botão Voltar -->
   <div style="text-align: center; margin-top: 60px;">
     <a href="index.html" class="btn-voltar">← Voltar para a tela inicial</a>
   </div>
 </main>
 
 <script>
-  // Seu firebaseConfig aqui
-  const firebaseConfig = { /* cole seu config */ };
+  // Cole aqui o firebaseConfig REAL do seu projeto Firebase (obtido no console)
+  const firebaseConfig = {
+    apiKey: "SUA_API_KEY_AQUI",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
+    messagingSenderId: "SEU_NUMERO",
+    appId: "1:SEU_NUMERO:web:SUA_CHAVE"
+  };
+
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
   let salaAtual = null;
 
-  window.onload = function() {
-    criarSalaAutomatica();
-  };
+  // Cria uma NOVA sala (e senha aleatória) toda vez que a página for carregada
+  window.addEventListener('load', () => {
+    criarNovaSala();
+  });
 
-  function criarSalaAutomatica() {
+  function criarNovaSala() {
     salaAtual = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     db.ref(`salas/${salaAtual}`).set({
@@ -159,9 +169,12 @@
       alunos: {}
     }).then(() => {
       document.getElementById("senha-sala").textContent = salaAtual;
+      monitorarSala();
+    }).catch(error => {
+      console.error("Erro ao criar sala:", error);
+      document.getElementById("senha-sala").textContent = "Erro ao criar sala";
+      alert("Não foi possível criar a aula. Verifique o console (F12) e o firebaseConfig.");
     });
-
-    monitorarSala();
   }
 
   function monitorarSala() {
@@ -259,7 +272,7 @@
     db.ref(`salas/${salaAtual}/atual`).remove();
   }
 
-  // Símbolos matemáticos caindo (igual ao index)
+  // Símbolos matemáticos caindo
   const simbolos = ["+", "−", "×", "÷", "=", "²", "³", "√", "π", "∞", "%", "≈", "≠"];
   setInterval(() => {
     const s = document.createElement("div");
