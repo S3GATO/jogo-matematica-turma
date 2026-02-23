@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Jogo de Matemática - Entrar na Sala</title>
+  <title>Jogo de Matemática - Entrar na Aula</title>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <style>
@@ -125,18 +125,6 @@
       transform: translateY(-3px);
       box-shadow: 0 6px 15px rgba(0,0,0,0.5);
     }
-    #feedback {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 8rem;
-      font-weight: bold;
-      z-index: 1000;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.6s;
-    }
   </style>
 </head>
 <body>
@@ -144,14 +132,14 @@
 <div class="falling-symbols" id="symbols"></div>
 
 <header>
-  <h1>Jogo de Matemática - Turma</h1>
+  <h1>Jogo de Matemática - Entrar na Aula</h1>
 </header>
 
 <main>
   <div id="entrada">
-    <h2>Entrar na sala</h2>
+    <h2>Entrar na aula</h2>
     <input id="nome-aluno" placeholder="Seu nome" autofocus />
-    <input id="senha-sala" placeholder="Senha da sala" />
+    <input id="senha-sala" placeholder="Senha da aula" />
     <button onclick="entrarNaSala()">Entrar</button>
 
     <div style="margin-top: 40px;">
@@ -167,7 +155,7 @@
   </div>
 
   <div id="fim" style="display:none;">
-    <h2>Rodada terminada!</h2>
+    <h2>Aula terminada!</h2>
     <p id="resultado-final" style="font-size:2.2rem; margin:40px 0;"></p>
     <button onclick="location.reload()">Jogar novamente</button>
 
@@ -178,9 +166,9 @@
 </main>
 
 <script>
-  // Seu firebaseConfig aqui (cole o mesmo das outras páginas)
+  // Cole aqui o firebaseConfig REAL do seu projeto Firebase
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
+    apiKey: "SUA_API_KEY_AQUI",
     authDomain: "SEU_PROJETO.firebaseapp.com",
     databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
     projectId: "SEU_PROJETO",
@@ -188,6 +176,7 @@
     messagingSenderId: "SEU_NUMERO",
     appId: "1:SEU_NUMERO:web:SUA_CHAVE"
   };
+
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
@@ -199,30 +188,50 @@
     nome = document.getElementById("nome-aluno").value.trim();
     sala = document.getElementById("senha-sala").value.trim().toUpperCase();
 
-    if (!nome || !sala) return alert("Preencha nome e senha da sala");
+    console.log("Tentando entrar com:", { nome, sala });
 
+    if (!nome || !sala) {
+      alert("Preencha nome e senha da aula");
+      console.log("Campos vazios");
+      return;
+    }
+
+    console.log("Verificando sala no Firebase:", `salas/${sala}`);
     db.ref(`salas/${sala}`).once("value").then(snap => {
+      console.log("Resposta do Firebase:", { exists: snap.exists(), data: snap.val() });
+
       if (!snap.exists()) {
+        console.log("Sala não encontrada");
         alert("Senha inválida! 😕\nPeça a senha correta para a professora e tente novamente.");
         return;
       }
 
-      db.ref(`salas/${sala}/alunos/${nome}`).set(true);
-
-      document.getElementById("entrada").style.display = "none";
-      document.getElementById("jogo").style.display = "block";
-
-      carregarJogo();
-    }).catch(() => alert("Erro ao conectar. Tente novamente."));
+      console.log("Sala encontrada! Registrando aluno...");
+      db.ref(`salas/${sala}/alunos/${nome}`).set(true).then(() => {
+        console.log("Aluno registrado com sucesso");
+        document.getElementById("entrada").style.display = "none";
+        document.getElementById("jogo").style.display = "block";
+        carregarJogo();
+      }).catch(error => {
+        console.error("Erro ao registrar aluno:", error);
+        alert("Erro ao registrar sua presença. Tente novamente.");
+      });
+    }).catch(error => {
+      console.error("Erro ao verificar sala:", error);
+      alert("Erro ao conectar com a aula. Verifique sua internet ou o console (F12).");
+    });
   }
 
   function carregarJogo() {
+    console.log("Carregando jogo da sala:", sala);
     db.ref(`salas/${sala}/perguntas`).once("value").then(snap => {
       perguntas = Object.values(snap.val() || {});
+      console.log("Perguntas carregadas:", perguntas.length);
     });
 
     db.ref(`salas/${sala}/atual`).on("value", snap => {
       const idx = snap.val();
+      console.log("Pergunta atual:", idx);
 
       if (idx === null) {
         document.getElementById("status").textContent = "Aguardando a professora iniciar...";
@@ -269,31 +278,16 @@
   function responder(escolhida, correta) {
     const acertou = escolhida === correta;
 
-    // Feedback visual grande no centro da tela
-    const feedback = document.createElement("div");
-    feedback.id = "feedback";
-    feedback.textContent = acertou ? "✅ ACERTOU!" : "❌ ERROU!";
-    feedback.style.color = acertou ? "#66bb6a" : "#e53935";
-    document.body.appendChild(feedback);
+    db.ref(`salas/${sala}/respostas/${nome}`).update({
+      acertos: firebase.database.ServerValue.increment(acertou ? 1 : 0),
+      ultima: escolhida,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
 
-    setTimeout(() => feedback.style.opacity = "1", 10);
-    setTimeout(() => {
-      feedback.style.opacity = "0";
-      setTimeout(() => feedback.remove(), 600);
-    }, 1200);
-
-    // Atualiza o resultado pequeno embaixo
     const resDiv = document.getElementById("resultado");
     resDiv.style.color = acertou ? "#66bb6a" : "#e53935";
     resDiv.textContent = acertou ? "Correto! ✓" : `Errado • Era ${correta}`;
     setTimeout(() => resDiv.textContent = "", 3000);
-
-    // Salva no banco
-    db.ref(`salas/${sala}/respostas/${nome}`).update({
-      acertos: firebase.database.ServerValue.increment(acertou ? 1 : 0),
-      ultima: escolhida || "timeout",
-      timestamp: firebase.database.ServerValue.TIMESTAMP
-    });
   }
 
   function mostrarFim() {
@@ -307,7 +301,7 @@
     });
   }
 
-  // Símbolos matemáticos caindo (igual ao index.html)
+  // Símbolos matemáticos caindo
   const simbolos = ["+", "−", "×", "÷", "=", "²", "³", "√", "π", "∞", "%", "≈", "≠"];
   setInterval(() => {
     const s = document.createElement("div");
