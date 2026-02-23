@@ -196,19 +196,22 @@
       return;
     }
 
-    console.log("Verificando sala no Firebase:", `salas/${sala}`);
-    db.ref(`salas/${sala}`).once("value").then(snap => {
-      console.log("Resposta do Firebase:", { exists: snap.exists(), data: snap.val() });
+    console.log("Consultando Firebase em: salas/" + sala);
+    db.ref("salas/" + sala).once("value").then(snap => {
+      console.log("Resultado da consulta:", {
+        existe: snap.exists(),
+        dados: snap.val()
+      });
 
       if (!snap.exists()) {
-        console.log("Sala não encontrada");
-        alert("Senha inválida! 😕\nPeça a senha correta para a professora e tente novamente.");
+        alert("Senha inválida! Verifique se digitou exatamente a senha gerada pela professora (maiúsculas e sem espaços).");
+        console.log("Sala não encontrada no Firebase");
         return;
       }
 
       console.log("Sala encontrada! Registrando aluno...");
-      db.ref(`salas/${sala}/alunos/${nome}`).set(true).then(() => {
-        console.log("Aluno registrado com sucesso");
+      db.ref("salas/" + sala + "/alunos/" + nome).set(true).then(() => {
+        console.log("Aluno registrado com sucesso. Avançando para o jogo...");
         document.getElementById("entrada").style.display = "none";
         document.getElementById("jogo").style.display = "block";
         carregarJogo();
