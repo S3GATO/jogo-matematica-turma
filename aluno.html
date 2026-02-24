@@ -166,16 +166,17 @@
 </main>
 
 <script>
-  // Cole aqui o firebaseConfig REAL do seu projeto Firebase
+  // ==================== COLE AQUI O SEU firebaseConfig REAL ====================
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_NUMERO",
-    appId: "1:SEU_NUMERO:web:SUA_CHAVE"
+    apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",           // ← Substitua
+    authDomain: "jogo-matematica-27c29.firebaseapp.com",
+    databaseURL: "https://jogo-matematica-27c29-default-rtdb.firebaseio.com",
+    projectId: "jogo-matematica-27c29",
+    storageBucket: "jogo-matematica-27c29.appspot.com",
+    messagingSenderId: "XXXXXXXXXXXX",
+    appId: "1:XXXXXXXXXXXX:web:xxxxxxxxxxxxxxxxxxxxxxxx"
   };
+  // ============================================================================
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
@@ -188,66 +189,58 @@
     nome = document.getElementById("nome-aluno").value.trim();
     sala = document.getElementById("senha-sala").value.trim().toUpperCase();
 
-    console.log("Tentando entrar com:", { nome, sala });
+    console.log("=== Tentativa de entrada ===");
+    console.log("Nome:", nome);
+    console.log("Senha digitada:", sala);
 
     if (!nome || !sala) {
       alert("Preencha nome e senha da aula");
-      console.log("Campos vazios");
       return;
     }
 
-    console.log("Consultando Firebase em: salas/" + sala);
+    console.log("Consultando sala no Firebase: salas/" + sala);
+
     db.ref("salas/" + sala).once("value").then(snap => {
-      console.log("Resultado da consulta:", {
-        existe: snap.exists(),
-        dados: snap.val()
-      });
+      console.log("Resposta do Firebase:");
+      console.log("Existe?", snap.exists());
+      console.log("Dados:", snap.val());
 
       if (!snap.exists()) {
-        alert("Senha inválida! Verifique se digitou exatamente a senha gerada pela professora (maiúsculas e sem espaços).");
-        console.log("Sala não encontrada no Firebase");
+        alert("Senha inválida! Verifique se digitou exatamente a senha que a professora gerou.");
         return;
       }
 
       console.log("Sala encontrada! Registrando aluno...");
       db.ref("salas/" + sala + "/alunos/" + nome).set(true).then(() => {
-        console.log("Aluno registrado com sucesso. Avançando para o jogo...");
+        console.log("Aluno registrado com sucesso!");
         document.getElementById("entrada").style.display = "none";
         document.getElementById("jogo").style.display = "block";
         carregarJogo();
-      }).catch(error => {
-        console.error("Erro ao registrar aluno:", error);
+      }).catch(err => {
+        console.error("Erro ao registrar aluno:", err);
         alert("Erro ao registrar sua presença. Tente novamente.");
       });
-    }).catch(error => {
-      console.error("Erro ao verificar sala:", error);
-      alert("Erro ao conectar com a aula. Verifique sua internet ou o console (F12).");
+    }).catch(err => {
+      console.error("Erro ao consultar sala:", err);
+      alert("Erro ao conectar com o servidor. Verifique sua internet.");
     });
   }
 
   function carregarJogo() {
-    console.log("Carregando jogo da sala:", sala);
     db.ref(`salas/${sala}/perguntas`).once("value").then(snap => {
       perguntas = Object.values(snap.val() || {});
-      console.log("Perguntas carregadas:", perguntas.length);
     });
 
     db.ref(`salas/${sala}/atual`).on("value", snap => {
       const idx = snap.val();
-      console.log("Pergunta atual:", idx);
-
       if (idx === null) {
         document.getElementById("status").textContent = "Aguardando a professora iniciar...";
-        document.getElementById("pergunta").textContent = "";
-        document.getElementById("opcoes").innerHTML = "";
         return;
       }
-
       if (idx >= perguntas.length) {
         mostrarFim();
         return;
       }
-
       mostrarPergunta(idx);
     });
   }
