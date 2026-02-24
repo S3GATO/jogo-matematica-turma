@@ -77,6 +77,11 @@
       font-size: 1.4rem;
       color: #bbb;
     }
+    #loading-message {
+      margin: 20px 0;
+      font-size: 1.2rem;
+      color: #ffeb3b;
+    }
     #pergunta {
       font-size: 3.5rem;
       font-weight: bold;
@@ -125,11 +130,6 @@
       transform: translateY(-3px);
       box-shadow: 0 6px 15px rgba(0,0,0,0.5);
     }
-    #loading-message {
-      font-size: 1.2rem;
-      color: #ffeb3b;
-      margin: 20px 0;
-    }
   </style>
 </head>
 <body>
@@ -172,13 +172,13 @@
 </main>
 
 <script>
-  // Cole aqui o firebaseConfig REAL do seu projeto
+  // Cole aqui o firebaseConfig REAL do seu projeto Firebase
   const firebaseConfig = {
     apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "jogo-matematica-27c29.firebaseapp.com",
-    databaseURL: "https://jogo-matematica-27c29-default-rtdb.firebaseio.com",
-    projectId: "jogo-matematica-27c29",
-    storageBucket: "jogo-matematica-27c29.appspot.com",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
     messagingSenderId: "SEU_NUMERO",
     appId: "1:SEU_NUMERO:web:SUA_CHAVE"
   };
@@ -195,7 +195,7 @@
     sala = document.getElementById("senha-sala").value.trim().toUpperCase();
 
     const loading = document.getElementById("loading-message");
-    loading.textContent = "Verificando a sala... Aguarde.";
+    loading.textContent = "Verificando sala... Aguarde.";
 
     console.log("=== Início da tentativa de entrada ===");
     console.log("Nome digitado:", nome);
@@ -204,10 +204,11 @@
     if (!nome || !sala) {
       loading.textContent = "";
       alert("Preencha nome e senha da aula corretamente.");
+      console.log("Campos vazios");
       return;
     }
 
-    console.log("Consultando o Firebase no caminho: salas/" + sala);
+    console.log("Consultando Firebase no caminho: salas/" + sala);
 
     db.ref("salas/" + sala).once("value").then(snap => {
       console.log("Resposta completa do Firebase:");
@@ -216,15 +217,19 @@
 
       if (!snap.exists()) {
         loading.textContent = "";
-        alert("Senha inválida!\nVerifique se digitou exatamente a senha gerada pela professora (maiúsculas e sem espaços).");
+        alert("Senha inválida!\n" +
+              "Verifique se digitou exatamente a senha gerada pela professora\n" +
+              "(maiúsculas, sem espaços ou erros de digitação).\n" +
+              "Dica: copie e cole a senha para evitar erros.");
         console.log("Motivo: Sala não existe no Firebase");
         return;
       }
 
-      console.log("Sala encontrada! Registrando o aluno...");
+      console.log("Sala encontrada! Registrando aluno...");
+      loading.textContent = "Entrada confirmada! Carregando jogo...";
+
       db.ref("salas/" + sala + "/alunos/" + nome).set(true).then(() => {
         console.log("Aluno registrado com sucesso! Avançando para o jogo...");
-        loading.textContent = "Entrada confirmada! Carregando jogo...";
         setTimeout(() => {
           document.getElementById("entrada").style.display = "none";
           document.getElementById("jogo").style.display = "block";
@@ -237,24 +242,26 @@
       });
     }).catch(err => {
       loading.textContent = "";
-      console.error("Erro ao consultar o Firebase:", err);
-      alert("Erro ao conectar com a sala. Verifique sua internet ou o console (F12).");
+      console.error("Erro ao consultar sala:", err);
+      alert("Erro ao conectar com a aula. Verifique sua internet ou o console (F12).");
     });
   }
 
   function carregarJogo() {
-    console.log("Iniciando carregamento do jogo para sala:", sala);
+    console.log("Carregando jogo da sala:", sala);
     db.ref(`salas/${sala}/perguntas`).once("value").then(snap => {
       perguntas = Object.values(snap.val() || {});
-      console.log("Perguntas carregadas:", perguntas);
+      console.log("Perguntas carregadas:", perguntas.length);
     });
 
     db.ref(`salas/${sala}/atual`).on("value", snap => {
       const idx = snap.val();
-      console.log("Pergunta atual recebida:", idx);
+      console.log("Pergunta atual:", idx);
 
       if (idx === null) {
         document.getElementById("status").textContent = "Aguardando a professora iniciar...";
+        document.getElementById("pergunta").textContent = "";
+        document.getElementById("opcoes").innerHTML = "";
         return;
       }
 
