@@ -1,6 +1,6 @@
-// common.js - Funções comuns a todas as páginas
+// common.js – Funções comuns usadas em todas as páginas
 
-// Símbolos matemáticos caindo
+// Inicia os símbolos matemáticos caindo no fundo
 function iniciarSimbolos() {
   const simbolos = ["+", "−", "×", "÷", "=", "²", "³", "√", "π", "∞", "%", "≈", "≠"];
   
@@ -14,3 +14,10 @@ function iniciarSimbolos() {
     setTimeout(() => s.remove(), 35000);
   }, 500);
 }
+
+// Executa ao carregar qualquer página que tenha #symbols
+window.addEventListener('load', () => {
+  if (document.getElementById("symbols")) {
+    iniciarSimbolos();
+  }
+});

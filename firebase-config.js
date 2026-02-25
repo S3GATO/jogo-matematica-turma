@@ -1,15 +1,18 @@
 // firebase-config.js
+// Configuração do Firebase – altere apenas aqui quando necessário
+
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_AQUI",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_NUMERO",
-  appId: "1:SEU_NUMERO:web:SUA_CHAVE"
+  apiKey: "AIzaSyAvxTI0k3k66GGRsQ6p5kKjDmldzjVUC",  // ← sua chave real
+  authDomain: "jogo-matematica-27c29.firebaseapp.com",
+  databaseURL: "https://jogo-matematica-27c29-default-rtdb.firebaseio.com",
+  projectId: "jogo-matematica-27c29",
+  storageBucket: "jogo-matematica-27c29.appspot.com",
+  messagingSenderId: "201540072957",
+  appId: "1:201540072957:web:bc6fb2314a7a965969d594",
+  measurementId: "G-TK1935BSBM"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-console.log("Firebase configurado com sucesso");
+console.log("Firebase inicializado com sucesso.");
