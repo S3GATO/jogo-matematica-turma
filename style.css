@@ -1,5 +1,6 @@
-/* style.css - Responsivo mobile-first */
+/* style.css - Responsivo mobile-first com feedback visual */
 
+/* Reset e base */
 * {
   margin: 0;
   padding: 0;
@@ -68,6 +69,9 @@ main {
   color: #ffeb3b;
   text-align: center;
   margin: 15px 0;
+  background: #333;
+  padding: 8px;
+  border-radius: 8px;
 }
 
 /* Pergunta */
@@ -77,6 +81,7 @@ main {
   margin: 30px 0;
   min-height: 80px;
   color: #fff;
+  text-align: center;
 }
 
 /* Opções de resposta */
@@ -107,21 +112,62 @@ main {
   transform: scale(1.03);
 }
 
-/* Feedback visual */
-.opcao.correta { background: #4CAF50 !important; }
-.opcao.errada { background: #e53935 !important; }
-.opcao.desabilitada { background: #555 !important; cursor: not-allowed; }
-
-/* Responsividade */
-@media (min-width: 768px) {
-  main { max-width: 1000px; padding: 2.5rem; margin: 2rem auto; }
-  header h1 { font-size: 2.5rem; }
-  #pergunta { font-size: 3.5rem; }
-  .opcao { font-size: 2rem; padding: 25px; }
-  .symbol { font-size: 2.5rem; }
+/* Feedback visual após resposta */
+.opcao.correta {
+  background: #4CAF50 !important;
+  color: white !important;
 }
 
+.opcao.errada {
+  background: #e53935 !important;
+  color: white !important;
+}
+
+.opcao.desabilitada {
+  background: #555 !important;
+  color: #aaa !important;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsividade - Ajustes para telas maiores (≥ 768px) */
+@media (min-width: 768px) {
+  main {
+    max-width: 1000px;
+    padding: 2.5rem;
+    margin: 2rem auto;
+  }
+
+  header h1 {
+    font-size: 2.5rem;
+  }
+
+  #pergunta {
+    font-size: 3.5rem;
+  }
+
+  .opcao {
+    font-size: 2rem;
+    padding: 25px;
+  }
+
+  .symbol {
+    font-size: 2.5rem;
+  }
+
+  #timer {
+    font-size: 2.2rem;
+  }
+}
+
+/* Telas muito grandes (≥ 1200px) */
 @media (min-width: 1200px) {
-  main { max-width: 1200px; padding: 3rem; }
-  .opcao { font-size: 2.2rem; }
+  main {
+    max-width: 1200px;
+    padding: 3rem;
+  }
+
+  .opcao {
+    font-size: 2.2rem;
+  }
 }
