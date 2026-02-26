@@ -49,7 +49,41 @@ function monitorarSala() {
     });
   });
 
-  // ... (manter monitoramento de alunos, atual, respostas como antes)
+  db.ref(`salas/${salaAtual}/alunos`).on("value", snap => {
+    const div = document.getElementById("listaAlunos");
+    div.innerHTML = "";
+    const alunos = snap.val() || {};
+    if (Object.keys(alunos).length === 0) {
+      div.textContent = "Nenhum aluno entrou ainda...";
+    } else {
+      Object.keys(alunos).forEach(nome => {
+        const p = document.createElement("p");
+        p.textContent = nome;
+        p.style.margin = "10px 0";
+        p.style.fontSize = "1.2rem";
+        div.appendChild(p);
+      });
+    }
+  });
+
+  db.ref(`salas/${salaAtual}/atual`).on("value", snap => {
+    const idx = snap.val();
+    document.getElementById("pergunta-atual").textContent = idx === null ? "—" : `Pergunta ${idx + 1}`;
+    document.getElementById("btnProxima").disabled = idx === null;
+    document.getElementById("btnFinalizar").disabled = idx === null;
+    document.getElementById("btnIniciar").disabled = idx !== null;
+  });
+
+  db.ref(`salas/${salaAtual}/respostas`).on("value", snap => {
+    const tbody = document.getElementById("tabelaRespostas");
+    tbody.innerHTML = "";
+    const respostas = snap.val() || {};
+    Object.entries(respostas).forEach(([nome, data]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${nome}</td><td>${data.acertos || 0}</td><td>${data.ultima ?? "-"}</td>`;
+      tbody.appendChild(tr);
+    });
+  });
 }
 
 function addPerguntaManual() {
@@ -67,14 +101,16 @@ function gerarPerguntaAleatoria() {
     () => { let a=Math.floor(Math.random()*25)+5, b=Math.floor(Math.random()*a)+1; return {p:`${a} - ${b} =`, r:a-b} },
     () => { let a=Math.floor(Math.random()*12)+1, b=Math.floor(Math.random()*12)+1; return {p:`${a} × ${b} =`, r:a*b} },
     () => { let d=Math.floor(Math.random()*9)+2, q=Math.floor(Math.random()*8)+2; return {p:`${d*q} ÷ ${d} =`, r:q} },
-    // Expressões mais desafiadoras
     () => { let a=Math.floor(Math.random()*10)+1, b=Math.floor(Math.random()*10)+1, c=Math.floor(Math.random()*5)+1; return {p:`${a} × ${b} - ${c} + ${Math.floor(Math.random()*5)+1} =`, r: a*b - c + Math.floor(Math.random()*5)+1} }
   ];
   const q = tipos[Math.floor(Math.random()*tipos.length)]();
   db.ref(`salas/${salaAtual}/perguntas`).push({ pergunta: q.p, resposta: q.r });
 }
 
-// ... (manter limparPerguntas, iniciarRodada, proximaPergunta)
+function limparPerguntas() {
+  if (!confirm("Limpar todas as perguntas?")) return;
+  db.ref(`salas/${salaAtual}/perguntas`).remove();
+}
 
 function iniciarRodada() {
   db.ref(`salas/${salaAtual}/perguntas`).once("value").then(snap => {
@@ -82,7 +118,6 @@ function iniciarRodada() {
     const total = Object.keys(perguntas).length;
     if (total === 0) return alert("Adicione pelo menos uma pergunta");
 
-    // Salva total de perguntas
     db.ref(`salas/${salaAtual}`).update({ 
       atual: 0, 
       respostas: {},
@@ -90,22 +125,26 @@ function iniciarRodada() {
       finalizada: false
     });
 
-    // Limpa bloqueio de respostas
     db.ref(`salas/${salaAtual}/alunos`).once("value").then(snapAlunos => {
       const alunos = snapAlunos.val() || {};
       Object.keys(alunos).forEach(aluno => {
         db.ref(`salas/${salaAtual}/alunos/${aluno}/ultimaPerguntaRespondida`).remove();
+        db.ref(`salas/${salaAtual}/alunos/${aluno}/respondeuAtual`).remove();
       });
     });
   });
 }
 
+function proximaPergunta() {
+  db.ref(`salas/${salaAtual}/atual`).transaction(n => (n || 0) + 1);
+}
+
 function finalizarRodada() {
-  // Limpa bloqueio
   db.ref(`salas/${salaAtual}/alunos`).once("value").then(snap => {
     const alunos = snap.val() || {};
     Object.keys(alunos).forEach(aluno => {
       db.ref(`salas/${salaAtual}/alunos/${aluno}/ultimaPerguntaRespondida`).remove();
+      db.ref(`salas/${salaAtual}/alunos/${aluno}/respondeuAtual`).remove();
     });
   });
 
@@ -114,6 +153,5 @@ function finalizarRodada() {
     finalizada: true 
   });
 
-  // Redireciona para o pódio
   window.location.href = `podio.html?sala=${salaAtual}`;
 }
