@@ -1,8 +1,11 @@
-// aluno-script.js – Toda a lógica da página do aluno
+// aluno-script.js
 
 let nome = "";
 let sala = "";
 let perguntas = [];
+let idxAtual = -1;
+let timerInterval = null;
+let tempoInicio = null;
 
 function entrarNaSala() {
   nome = document.getElementById("nome-aluno").value.trim();
@@ -11,80 +14,48 @@ function entrarNaSala() {
   const loading = document.getElementById("loading-message");
   loading.textContent = "Verificando sala... Aguarde.";
 
-  console.log("=== Início da tentativa de entrada ===");
-  console.log("Nome digitado:", nome);
-  console.log("Senha digitada:", sala);
-
   if (!nome || !sala) {
     loading.textContent = "";
     alert("Preencha nome e senha da aula corretamente.");
-    console.log("Campos vazios");
     return;
   }
 
-  console.log("Consultando Firebase no caminho: salas/" + sala);
-
   db.ref("salas/" + sala).once("value").then(snap => {
-    console.log("Resposta completa do Firebase:");
-    console.log("Existe a sala?", snap.exists());
-    console.log("Dados da sala:", snap.val());
-
     if (!snap.exists()) {
       loading.textContent = "";
-      alert("Senha inválida!\n" +
-            "Verifique se digitou exatamente a senha gerada pela professora\n" +
-            "(maiúsculas, sem espaços ou erros de digitação).\n" +
-            "Dica: copie e cole a senha para evitar erros.");
-      console.log("Motivo: Sala não existe no Firebase");
+      alert("Senha inválida! Verifique se digitou exatamente a senha gerada pela professora.");
       return;
     }
 
-    console.log("Sala encontrada! Registrando aluno...");
-    loading.textContent = "Entrada confirmada! Carregando jogo...";
-
-    db.ref("salas/" + sala + "/alunos/" + nome).set(true).then(() => {
-      console.log("Aluno registrado com sucesso! Avançando para o jogo...");
-      setTimeout(() => {
-        document.getElementById("entrada").style.display = "none";
-        document.getElementById("jogo").style.display = "block";
-        carregarJogo();
-      }, 800); // pequeno delay para o usuário ver a mensagem
-    }).catch(err => {
-      loading.textContent = "";
-      console.error("Erro ao registrar aluno:", err);
-      alert("Erro ao registrar sua presença. Tente novamente.");
-    });
+    db.ref("salas/" + sala + "/alunos/" + nome).set(true);
+    document.getElementById("entrada").style.display = "none";
+    document.getElementById("jogo").style.display = "block";
+    carregarJogo();
   }).catch(err => {
     loading.textContent = "";
-    console.error("Erro ao consultar sala:", err);
-    alert("Erro ao conectar com a aula. Verifique sua internet ou o console (F12).");
+    alert("Erro ao conectar com a aula.");
   });
 }
 
 function carregarJogo() {
-  console.log("Carregando jogo da sala:", sala);
   db.ref(`salas/${sala}/perguntas`).once("value").then(snap => {
     perguntas = Object.values(snap.val() || {});
-    console.log("Perguntas carregadas:", perguntas.length);
   });
 
   db.ref(`salas/${sala}/atual`).on("value", snap => {
-    const idx = snap.val();
-    console.log("Pergunta atual:", idx);
+    idxAtual = snap.val();
 
-    if (idx === null) {
+    if (idxAtual === null) {
       document.getElementById("status").textContent = "Aguardando a professora iniciar...";
-      document.getElementById("pergunta").textContent = "";
-      document.getElementById("opcoes").innerHTML = "";
       return;
     }
 
-    if (idx >= perguntas.length) {
+    if (idxAtual >= perguntas.length) {
       mostrarFim();
       return;
     }
 
-    mostrarPergunta(idx);
+    mostrarPergunta(idxAtual);
   });
 }
 
@@ -109,24 +80,70 @@ function mostrarPergunta(idx) {
     const btn = document.createElement("button");
     btn.className = "opcao";
     btn.textContent = val;
-    btn.onclick = () => responder(val, correta);
+    btn.onclick = () => responder(val, correta, btn);
     opcoesDiv.appendChild(btn);
   });
+
+  // Inicia timer de 16 segundos
+  tempoInicio = Date.now();
+  let tempoRestante = 16;
+  document.getElementById("timer").textContent = `Tempo: ${tempoRestante}s`;
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    tempoRestante = 16 - Math.floor((Date.now() - tempoInicio) / 1000);
+    document.getElementById("timer").textContent = `Tempo: ${tempoRestante}s`;
+
+    if (tempoRestante <= 0) {
+      clearInterval(timerInterval);
+      desabilitarOpcoes();
+      // Avança automaticamente (simula resposta errada ou tempo esgotado)
+      setTimeout(() => proximaPergunta(), 2000);
+    }
+  }, 1000);
 }
 
-function responder(escolhida, correta) {
-  const acertou = escolhida === correta;
+function responder(escolhida, correta, btnClicado) {
+  clearInterval(timerInterval);
 
+  const acertou = escolhida === correta;
+  const tempoDecorrido = (Date.now() - tempoInicio) / 1000;
+  const pontos = acertou ? Math.max(100, 1000 * (1 - tempoDecorrido / 16)) : 0;
+
+  // Desabilita todas as opções
+  desabilitarOpcoes();
+
+  // Feedback visual
+  document.querySelectorAll(".opcao").forEach(btn => {
+    if (btn.textContent == correta) btn.classList.add("correta");
+    if (btn.textContent == escolhida && !acertou) btn.classList.add("errada");
+    if (btn !== btnClicado && btn.textContent != correta) btn.classList.add("desabilitada");
+  });
+
+  // Registra resposta
   db.ref(`salas/${sala}/respostas/${nome}`).update({
     acertos: firebase.database.ServerValue.increment(acertou ? 1 : 0),
+    pontos: firebase.database.ServerValue.increment(Math.round(pontos)),
     ultima: escolhida,
     timestamp: firebase.database.ServerValue.TIMESTAMP
   });
 
+  // Marca que respondeu esta pergunta
+  db.ref(`salas/${sala}/alunos/${nome}`).update({
+    ultimaPerguntaRespondida: idxAtual
+  });
+
   const resDiv = document.getElementById("resultado");
   resDiv.style.color = acertou ? "#66bb6a" : "#e53935";
-  resDiv.textContent = acertou ? "Correto! ✓" : `Errado • Era ${correta}`;
+  resDiv.textContent = acertou ? `Correto! +${Math.round(pontos)} pontos` : `Errado • Era ${correta}`;
   setTimeout(() => resDiv.textContent = "", 3000);
+}
+
+function desabilitarOpcoes() {
+  document.querySelectorAll(".opcao").forEach(btn => {
+    btn.disabled = true;
+    btn.style.cursor = "not-allowed";
+  });
 }
 
 function mostrarFim() {
@@ -134,8 +151,8 @@ function mostrarFim() {
   document.getElementById("fim").style.display = "block";
 
   db.ref(`salas/${sala}/respostas/${nome}`).once("value").then(snap => {
-    const data = snap.val() || {acertos: 0};
+    const data = snap.val() || {acertos: 0, pontos: 0};
     document.getElementById("resultado-final").textContent = 
-      `Você acertou ${data.acertos} de ${perguntas.length} perguntas!`;
+      `Você acertou ${data.acertos} perguntas e fez ${data.pontos} pontos!`;
   });
 }
