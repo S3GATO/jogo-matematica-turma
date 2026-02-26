@@ -60,12 +60,13 @@ function carregarJogo() {
 }
 
 function mostrarPergunta(idx) {
+  idxAtual = idx;
   const q = perguntas[idx];
   document.getElementById("pergunta").textContent = q.pergunta;
   document.getElementById("status").textContent = `Pergunta ${idx + 1} de ${perguntas.length}`;
 
   const opcoesDiv = document.getElementById("opcoes");
-  opcoesDiv.innerHTML = "";
+  opcoesDiv.innerHTML = ""; // Limpa opções anteriores (remove qualquer feedback antigo)
 
   const correta = q.resposta;
   let alternativas = [correta];
@@ -97,8 +98,7 @@ function mostrarPergunta(idx) {
     if (tempoRestante <= 0) {
       clearInterval(timerInterval);
       desabilitarOpcoes();
-      // Avança automaticamente (simula resposta errada ou tempo esgotado)
-      setTimeout(() => proximaPergunta(), 2000);
+      setTimeout(() => proximaPergunta(), 2000); // avança automaticamente
     }
   }, 1000);
 }
@@ -107,20 +107,35 @@ function responder(escolhida, correta, btnClicado) {
   clearInterval(timerInterval);
 
   const acertou = escolhida === correta;
+
+  // Desabilita todas as opções imediatamente
+  document.querySelectorAll(".opcao").forEach(btn => {
+    btn.disabled = true;
+    btn.style.cursor = "not-allowed";
+  });
+
+  // Feedback visual persistente até a próxima pergunta
+  document.querySelectorAll(".opcao").forEach(btn => {
+    const val = btn.textContent.trim();
+    if (val === correta) {
+      btn.classList.add("correta");
+    }
+    if (val === escolhida) {
+      if (acertou) {
+        btn.classList.add("correta");
+      } else {
+        btn.classList.add("errada");
+      }
+    }
+    if (val !== correta && val !== escolhida) {
+      btn.classList.add("desabilitada");
+    }
+  });
+
+  // Registra resposta e pontos
   const tempoDecorrido = (Date.now() - tempoInicio) / 1000;
   const pontos = acertou ? Math.max(100, 1000 * (1 - tempoDecorrido / 16)) : 0;
 
-  // Desabilita todas as opções
-  desabilitarOpcoes();
-
-  // Feedback visual
-  document.querySelectorAll(".opcao").forEach(btn => {
-    if (btn.textContent == correta) btn.classList.add("correta");
-    if (btn.textContent == escolhida && !acertou) btn.classList.add("errada");
-    if (btn !== btnClicado && btn.textContent != correta) btn.classList.add("desabilitada");
-  });
-
-  // Registra resposta
   db.ref(`salas/${sala}/respostas/${nome}`).update({
     acertos: firebase.database.ServerValue.increment(acertou ? 1 : 0),
     pontos: firebase.database.ServerValue.increment(Math.round(pontos)),
