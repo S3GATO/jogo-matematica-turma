@@ -4,11 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jogo de Matemática - Entrar na Aula</title>
+
+  <!-- Scripts do Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+  <!-- Scripts do projeto -->
   <script src="firebase-config.js"></script>
   <script src="common.js"></script>
   <script src="aluno-script.js"></script>
+
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -80,10 +85,15 @@
       font-size: 1.4rem;
       color: #bbb;
     }
-    #loading-message {
-      margin: 20px 0;
-      font-size: 1.2rem;
+    #timer {
+      font-size: 1.8rem;
+      font-weight: bold;
       color: #ffeb3b;
+      text-align: center;
+      margin: 15px 0;
+      background: #333;
+      padding: 8px;
+      border-radius: 8px;
     }
     #pergunta {
       font-size: 3.5rem;
@@ -157,6 +167,7 @@
   </div>
 
   <div id="jogo" style="display:none;">
+    <div id="timer">Tempo: 16s</div>
     <div id="pergunta"></div>
     <div class="opcoes" id="opcoes"></div>
     <div id="resultado"></div>
@@ -173,5 +184,9 @@
     </div>
   </div>
 </main>
+
 </body>
+</html>
+</body>
+
 </html>
