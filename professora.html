@@ -1,37 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel da Professora - Jogo de Matemática</title>
+    <style>
+        /* Reset e Base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #262626;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Container Central */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .status-partida {
+            color: #aaaaaa;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        /* Bloco de Destaque da Senha */
+        .senha-box {
+            background-color: #2d2d2d;
+            border: 2px solid #f1c40f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .senha-titulo {
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .senha-codigo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+        .senha-box small {
+            color: #888888;
+            font-size: 0.8rem;
+        }
+
+        /* Seção de Alunos Conectados */
+        .secao-titulo {
+            text-align: left;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #4ca1af;
+            font-weight: 600;
+        }
+        .alunos-box {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 120px;
+            max-height: 200px;
+            overflow-y: auto;
+            text-align: left;
+            margin-bottom: 25px;
+            border: 1px solid #3d3d3d;
+        }
+        .alunos-box p {
+            background-color: #383838;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            border-left: 3px solid #4ca1af;
+        }
+        .sem-alunos {
+            color: #777777;
+            font-style: italic;
+            display: block;
+            text-align: center;
+            margin-top: 35px;
+        }
+
+        /* Elementos Técnicos Ocultados para Evitar Bugs Visuais */
+        .oculto-inicial {
+            display: none;
+        }
+
+        /* Tabela Opcional para logs em tempo real (Caso queira ocultar também, adicione a classe oculto-inicial) */
+        .tabela-respostas {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+        .tabela-respostas th, .tabela-respostas td {
+            border: 1px solid #3d3d3d;
+            padding: 8px;
+            text-align: left;
+        }
+        .tabela-respostas th {
+            background-color: #2d2d2d;
+            color: #4ca1af;
+        }
+
+        /* Botões */
+        .btn-verde {
+            background-color: #44ad55;
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s ease;
+            box-shadow: 0 4px 12px rgba(68, 173, 85, 0.2);
+        }
+        .btn-verde:hover {
+            background-color: #3b964a;
+        }
+        .btn-verde:disabled {
+            background-color: #555555;
+            color: #888888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-voltar {
+            background-color: transparent;
+            color: #888888;
+            border: none;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .btn-voltar:hover {
+            color: #ffffff;
+        }
+    </style>
+</head>
 <body>
 
     <div class="container">
-        <p>Partida criada automaticamente</p>
+        <p class="status-partida">Partida criada automaticamente</p>
 
         <div class="senha-box">
-            <span class="senha-titulo">Senha da partida:</span>
-            <div id="senhaPartida" class="senha-codigo">Gerando...</div>
-            <small>Compartilhe essa senha com os alunos para que entrem na mesma partida</small>
+            <span class="senha-titulo">Senha da partida</span>
+            <div id="senha-sala" class="senha-codigo">...</div>
+            <small>Compartilhe essa senha com os alunos para que entrem na sala</small>
         </div>
 
-        <h3 style="text-align: left; margin-top: 20px;">Alunos conectados</h3>
+        <h3 class="secao-titulo">Alunos conectados</h3>
         <div class="alunos-box" id="listaAlunos">
-            <span style="color: #888;">Aguardando alunos...</span>
+            <span class="sem-alunos">Nenhum aluno entrou ainda...</span>
         </div>
 
-        <div style="margin-top: 30px;">
-            <button class="btn-verde" id="btnIniciarJogo" onclick="avancarParaPainelPerguntas()">Iniciar Jogo</button>
+        <div class="oculto-inicial">
+            <span id="pergunta-atual">—</span>
+            <span id="tempo-cronometro">Tempo: 30s</span>
+            <div id="listaPerguntas"></div>
         </div>
 
-        <h3 style="text-align: left; margin-top: 30px;">Respostas da turma (ao vivo)</h3>
-        <table class="tabela-respostas">
-            <thead>
-                <tr>
-                    <th>Aluno</th>
-                    <th>Acertos</th>
-                    <th>Última resposta</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaCorpoRespostas">
-                </tbody>
-        </table>
+        <div class="oculto-inicial">
+            <table class="tabela-respostas">
+                <thead>
+                    <tr>
+                        <th>Aluno</th>
+                        <th>Acertos</th>
+                        <th>Última</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaRespostas"></tbody>
+            </table>
+        </div>
 
+        <button class="btn-verde" id="btnIniciar" onclick="iniciarRodada()">Iniciar Jogo</button>
+
+        <br>
         <button class="btn-voltar" onclick="window.location.href='index.html'">← Voltar para a tela inicial</button>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="professora-script.js"></script>
 </body>
+</html>
